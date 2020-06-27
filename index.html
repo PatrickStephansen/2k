@@ -1,91 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-		<style>
-			pre {
-				line-height: 4em;
-			}
-		</style>
-		<title>2K</title>
-	</head>
-	<body>
-		<h1>2k</h1>
-		<p>2048 in 2048 bytes or less</p>
-		<pre id="o"></pre>
-		<script>
-			toText = m => m.map(r => r.join("\t")).join("\n");
-			getCol = (c, m) => m.map(r => r[c]);
-			rot90 = m => m.map((_, i) => getCol(m.length - i - 1, m));
-			rot180 = m => rot90(rot90(m));
-			rot270 = m => rot180(rot90(m));
-			stackM = r => {
-				const f = r.filter(c => c);
-				return f.length === 0
-					? [0]
-					: f.length === 1
-					? f
-					: f[0] == f[1]
-					? [f[0] * 2, ...stackM(f.slice(2))].flat()
-					: [f[0], ...stackM(f.slice(1))].flat();
-			};
-			zeros = n => Array(n).fill(0);
-			padRow = (l, a) =>
-				a.length >= l ? a.slice(0, l) : [...a, ...zeros(l - a.length)];
-			stackRow = m => m.map(r => padRow(m.length, stackM(r)));
-			setCell = (value, x, y, m) => [
-				...m.slice(0, y),
-				m[y].map((c, i) => (i === x ? value : c)),
-				...m.slice(y + 1)
-			];
-			withCoords = m =>
-				m.flatMap((r, y) => r.map((c, x) => ({ x, y, value: c })));
-			addSeed = (fillValue, m) => {
-				const empties = withCoords(m).filter(c => c.value === 0);
-				if (empties.length === 0) return m;
-				const choiceIndex = Math.floor(Math.random() * empties.length);
-				const choice = empties[choiceIndex];
-				return setCell(fillValue, choice.x, choice.y, m);
-			};
-			render = g => {
-				o.innerText = toText(g.board);
-			};
-			nextSeed = () => (Math.random() < 0.2 ? 4 : 2);
-			initBoard = () =>
-				addSeed(nextSeed(), addSeed(nextSeed(), Array(4).fill(zeros(4))));
-			anyChange = (a, b) => a.some((r, y) => r.some((c, x) => c !== b[y][x]));
-			newGame = () => ({
-				score: 0,
-				board: initBoard()
-			});
-			makeMove = (rot, rotback) => m => {
-				const moved = rotback(stackRow(rot(m)));
-				return anyChange(moved, m) ? addSeed(nextSeed(), moved) : moved;
-			};
-			theGame = newGame();
-			render(theGame);
-			document.addEventListener("keyup", e => {
-				advance = mv =>
-					mv === "Left"
-						? makeMove(
-								m => m,
-								m => m
-						  )
-						: mv === "Up"
-						? makeMove(rot90, rot270)
-						: mv === "Right"
-						? makeMove(rot180, rot180)
-						: makeMove(rot270, rot90);
-				if (e.key.startsWith("Arrow")) {
-					theGame = {
-						...theGame,
-						board: advance(e.key.slice("Arrow".length))(theGame.board)
-					};
-					render(theGame);
-				}
-			});
-		</script>
-	</body>
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+	<style>
+		pre {
+			line-height: 4em;
+		}
+	</style>
+	<title>2K</title>
+</head>
+<body>
+	<h1>2k</h1>
+	<p>2048 in 2048 bytes or less</p>
+	<pre id="o"></pre>
+	<script>
+toText = m => m.map(r => r.join("\t")).join("\n");
+stackM = r => {
+	const f = r.filter(c => c);
+	return f.length === 0
+		? [0]
+		: f.length === 1
+		? f
+		: f[0] == f[1]
+		? [f[0] * 2, ...stackM(f.slice(2))].flat()
+		: [f[0], ...stackM(f.slice(1))].flat();
+};
+zeros = n => Array(n).fill(0);
+padRow = (l, a) =>
+	a.length >= l ? a.slice(0, l) : [...a, ...zeros(l - a.length)];
+stackRow = m => m.map(r => padRow(m.length, stackM(r)));
+setCell = (value, x, y, m) => [
+	...m.slice(0, y),
+	m[y].map((c, i) => (i === x ? value : c)),
+	...m.slice(y + 1)
+];
+withCoords = m =>
+	m.flatMap((r, y) => r.map((c, x) => ({ x, y, value: c })));
+addSeed = (fillValue, m) => {
+	const empties = withCoords(m).filter(c => c.value === 0);
+	if (empties.length === 0) return m;
+	const choiceIndex = Math.floor(Math.random() * empties.length);
+	const choice = empties[choiceIndex];
+	return setCell(fillValue, choice.x, choice.y, m);
+};
+render = g => {
+	o.innerText = toText(g.board);
+};
+nextSeed = () => (Math.random() < 0.2 ? 4 : 2);
+initBoard = () =>
+	addSeed(nextSeed(), addSeed(nextSeed(), Array(4).fill(zeros(4))));
+anyChange = (a, b) => a.some((r, y) => r.some((c, x) => c !== b[y][x]));
+newGame = () => ({
+	score: 0,
+	board: initBoard()
+});
+makeMove = (rot, rotback) => m => {
+	const moved = rotback(stackRow(rot(m)));
+	return anyChange(moved, m) ? addSeed(nextSeed(), moved) : moved;
+};
+getCol = (c, m) => m.map(r => r[c]);
+rot90 = m => m.map((_, i) => getCol(m.length - i - 1, m));
+rot180 = m => rot90(rot90(m));
+rot270 = m => rot180(rot90(m));
+theGame = newGame();
+render(theGame);
+document.addEventListener("keyup", e => {
+	advance = mv =>
+		mv === "Left"
+			? makeMove(
+					m => m,
+					m => m
+				)
+			: mv === "Up"
+			? makeMove(rot90, rot270)
+			: mv === "Down"
+			? makeMove(rot270, rot90)
+			: makeMove(rot180, rot180);
+	if (e.key.startsWith("Arrow")) {
+		theGame = {
+			...theGame,
+			board: advance(e.key.slice(5))(theGame.board)
+		};
+		render(theGame);
+	}
+});
+	</script>
+</body>
 </html>
