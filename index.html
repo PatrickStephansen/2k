@@ -1,74 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-<style>
-pre {
-	line-height: 4em;
-}
-</style>
-<title>2K</title>
-</head>
-<body>
-<h1>2k</h1>
-<p>2048 in 2048 bytes</p>
-<pre id="out"></pre>
-<script>
-packRow = r =>
-	((f = r.filter(c => c)) =>
-		!f.length
-			? []
-			: f.length === 1
-			? f
-			: f[0] == f[1]
-			? [f[0] * 2, ...packRow(f.slice(2))].flat()
-			: [f[0], ...packRow(f.slice(1))].flat())();
-zeros = n => Array(n).fill(0);
-padRow = (l, a) =>
-	a.length >= l ? a.slice(0, l) : [...a, ...zeros(l - a.length)];
-packCells = m => m.map(r => padRow(m.length, packRow(r)));
-setCell = (v, x, y, m) => [
-	...m.slice(0, y),
-	m[y].map((c, i) => (i === x ? v : c)),
-	...m.slice(y + 1)
-];
-flattenCells = m => m.flatMap((r, y) => r.map((c, x) => ({ x, y, value: c })));
-plantSeed = (seed, m) => {
-	const empties = flattenCells(m).filter(c => c.value === 0);
-	if (empties.length === 0) return m;
-	const choice = empties[Math.floor(Math.random() * empties.length)];
-	return setCell(seed, choice.x, choice.y, m);
-};
-nextSeed = () => (Math.random() < 0.1 ? 4 : 2);
-anyChange = (a, b) => a.some((r, y) => r.some((c, x) => c !== b[y][x]));
-makeMove = (rot, rotback) => m =>
-	((n = rotback(packCells(rot(m)))) =>
-		anyChange(n, m) ? plantSeed(nextSeed(), n) : n)();
-rot0 = m => m;
-rot90 = m => m.map((_, i) => m.map(r => r[m.length - i - 1]));
-rot180 = m => rot90(rot90(m));
-rot270 = m => rot180(rot90(m));
-game = plantSeed(nextSeed(), plantSeed(nextSeed(), Array(4).fill(zeros(4))));
-render = m => {
-	out.innerText = m.map(r => r.join("\t")).join("\n");
-};
-render(game);
-document.addEventListener("keyup", e => {
-	const update = d =>
-		d === "Left"
-			? makeMove(rot0, rot0)
-			: d === "Up"
-			? makeMove(rot90, rot270)
-			: d === "Down"
-			? makeMove(rot270, rot90)
-			: makeMove(rot180, rot180);
-	if (e.key.startsWith("Arrow")) {
-		game = update(e.key.slice(5))(game);
-		render(game);
-	}
-});
-</script>
-</body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+		<style>
+			pre {
+				line-height: 4em;
+			}
+		</style>
+		<title>2K</title>
+	</head>
+	<body>
+		<h1>2k</h1>
+		<p>2048 in 2048 bytes</p>
+		<pre id="out"></pre>
+		<p id="result"></p>
+		<script>
+			zeros = n => Array(n).fill(0);
+			padZeros = (l, r) =>
+				r.length >= l ? r.slice(0, l) : [...r, ...zeros(l - r.length)];
+			packCells = (
+				m,
+				p = (r, f = r.filter(c => c)) =>
+					!f.length
+						? []
+						: f.length == 1
+						? f
+						: f[0] == f[1]
+						? [f[0] * 2, ...p(f.slice(2))].flat()
+						: [f[0], ...p(f.slice(1))].flat()
+			) => m.map(r => padZeros(m.length, p(r)));
+			setCell = (v, x, y, m) => [
+				...m.slice(0, y),
+				m[y].map((c, i) => (i == x ? v : c)),
+				...m.slice(y + 1)
+			];
+			plantSeed = (
+				m,
+				o = m
+					.flatMap((r, y) => r.map((v, x) => ({ x, y, v })))
+					.filter(c => c.v == 0),
+				c = o.length && o[Math.floor(Math.random() * o.length)]
+			) => (o.length ? setCell(Math.random() < 0.1 ? 4 : 2, c.x, c.y, m) : m);
+			makeMove = (rot, rotback) => (m, n = rotback(packCells(rot(m)))) =>
+				n.some((r, y) => r.some((c, x) => c !== m[y][x])) ? plantSeed(n) : n;
+			identity = m => m;
+			rot90 = m => m.map((_, i) => m.map(r => r[m.length - i - 1]));
+			rot180 = m => rot90(rot90(m));
+			rot270 = m => rot180(rot90(m));
+			game = plantSeed(plantSeed(Array(4).fill(zeros(4))));
+			render = m => {
+				out.innerText = m.map(r => r.join("\t")).join("\n");
+				result.innerText = (m.flat().some(c => c >= 2048) && "Winner!") || "";
+			};
+			render(game);
+			update = d =>
+				d == "L"
+					? makeMove(identity, identity)
+					: d == "U"
+					? makeMove(rot90, rot270)
+					: d == "D"
+					? makeMove(rot270, rot90)
+					: makeMove(rot180, rot180);
+			document.addEventListener("keyup", e => {
+				e.key.startsWith("Arrow") && render((game = update(e.key[5])(game)));
+			});
+		</script>
+	</body>
 </html>
