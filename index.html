@@ -62,10 +62,25 @@
 					? makeMove(rot90, rot270)
 					: d == "D"
 					? makeMove(rot270, rot90)
-					: makeMove(rot180, rot180);
+					: d == "R"
+					? makeMove(rot180, rot180)
+					: identity;
 			document.addEventListener("keyup", e => {
 				e.key.startsWith("Arrow") && render((game = update(e.key[5])(game)));
 			});
+			ts = null;
+			tt = 50;
+			document.addEventListener("touchstart", e => (ts = e.changedTouches[0]));
+			document.addEventListener(
+				"touchend",
+				(
+					e,
+					t = e.changedTouches[0],
+					x = ts.pageX - t.pageX,
+					y = ts.pageY - t.pageY,
+					d = x > tt ? "L" : x < -tt ? "R" : y > tt ? "U" : y < -tt ? "D" : 0
+				) => render((game = update(d)(game))) && (ts = null)
+			);
 		</script>
 	</body>
 </html>
