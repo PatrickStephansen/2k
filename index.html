@@ -3,18 +3,17 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1.0" />
-		<title>2K</title>
 	</head>
-	<body>
+	<body style="overscroll-behavior:none">
 		<h1>2k</h1>
 		<p>2048 in 2048 bytes</p>
 		<pre id="o" style="line-height:4em"></pre>
 		<p id="w"></p>
 		<script>
 			id = m => m;
-			zeros = n => Array(n).fill(0);
+			z = n => Array(n).fill(0);
 			pad = (l, r) =>
-				r.length >= l ? r.slice(0, l) : r.concat(zeros(l - r.length));
+				r.length >= l ? r.slice(0, l) : r.concat(z(l - r.length));
 			pack = (
 				m,
 				p = (r, f = r.filter(id)) =>
@@ -39,10 +38,10 @@
 			r90 = m => m.map((_, i) => m.map(r => r[m.length - i - 1]));
 			r180 = m => r90(r90(m));
 			r270 = m => r180(r90(m));
-			(rendr = m => {
+			(render = m => {
 				o.innerText = m.map(r => r.join("\t")).join("\n");
 				w.innerText = (m.flat().some(c => c >= 2048) && "Winner!") || "";
-			})((brd = seed(seed(zeros(4).map(() => zeros(4))))));
+			})((brd = seed(seed(z(4).map(() => z(4))))));
 			upd = d =>
 				d == 0
 					? mv(id, id)
@@ -55,7 +54,7 @@
 					: id;
 			l = document.addEventListener;
 			l("keyup", e => {
-				e.key.startsWith("Arrow") && rendr((brd = upd(e.keyCode - 37)(brd)));
+				e.key.startsWith("Arrow") && render((brd = upd(e.keyCode - 37)(brd)));
 			});
 			l("touchstart", e => (tch = e.changedTouches[0]));
 			l(
@@ -66,7 +65,7 @@
 					x = tch.pageX - t.pageX,
 					y = tch.pageY - t.pageY,
 					d = x > 50 ? 0 : x < -50 ? 2 : y > 50 ? 1 : y < -50 ? 3 : 9
-				) => rendr((brd = upd(d)(brd))) && (tch = null)
+				) => render((brd = upd(d)(brd))) && (tch = null)
 			);
 		</script>
 	</body>
