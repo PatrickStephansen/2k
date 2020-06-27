@@ -16,85 +16,73 @@
 		<p>2048 in 2048 bytes or less</p>
 		<pre id="o"></pre>
 		<script>
-			const compose = fns => x => fns.reverse().reduce((o, f) => f(o), x);
-			const toText = m => m.map(r => r.join("\t")).join("\n");
-			const getCol = (c, m) => m.map(r => r[c]);
-			const rot90 = m => m.map((_, i) => getCol(m.length - i - 1, m));
-			const rot180 = m => compose([rot90, rot90])(m);
-			const rot270 = m => compose([rot180, rot90])(m);
-			const stackRowLeft = r => {
+			toText = m => m.map(r => r.join("\t")).join("\n");
+			getCol = (c, m) => m.map(r => r[c]);
+			rot90 = m => m.map((_, i) => getCol(m.length - i - 1, m));
+			rot180 = m => rot90(rot90(m));
+			rot270 = m => rot180(rot90(m));
+			stackM = r => {
 				const f = r.filter(c => c);
 				return f.length === 0
 					? [0]
 					: f.length === 1
 					? f
 					: f[0] == f[1]
-					? [f[0] * 2, ...stackRowLeft(f.slice(2))].flat()
-					: [f[0], ...stackRowLeft(f.slice(1))].flat();
+					? [f[0] * 2, ...stackM(f.slice(2))].flat()
+					: [f[0], ...stackM(f.slice(1))].flat();
 			};
-			const zeros = n => Array(n).fill(0);
-			const ensureLength = (l, a) =>
+			zeros = n => Array(n).fill(0);
+			padRow = (l, a) =>
 				a.length >= l ? a.slice(0, l) : [...a, ...zeros(l - a.length)];
-			const stackLeft = m =>
-				m.map(r => ensureLength(m.length, stackRowLeft(r)));
-			const setCell = (value, x, y, m) => [
+			stackRow = m => m.map(r => padRow(m.length, stackM(r)));
+			setCell = (value, x, y, m) => [
 				...m.slice(0, y),
 				m[y].map((c, i) => (i === x ? value : c)),
 				...m.slice(y + 1)
 			];
-			const withCoords = m =>
+			withCoords = m =>
 				m.flatMap((r, y) => r.map((c, x) => ({ x, y, value: c })));
-			const fillRandomEmptyCell = (fillValue, m) => {
-				const candidates = withCoords(m).filter(c => c.value === 0);
-				if (candidates.length === 0) return m;
-				const choiceIndex = Math.floor(Math.random() * candidates.length);
-				const choice = candidates[choiceIndex];
+			addSeed = (fillValue, m) => {
+				const empties = withCoords(m).filter(c => c.value === 0);
+				if (empties.length === 0) return m;
+				const choiceIndex = Math.floor(Math.random() * empties.length);
+				const choice = empties[choiceIndex];
 				return setCell(fillValue, choice.x, choice.y, m);
 			};
-			const render = g => {
+			render = g => {
 				o.innerText = toText(g.board);
 			};
-			const nextInsertValue = () => (Math.random() < 0.25 ? 4 : 2);
-			const initializeBoard = () =>
-				fillRandomEmptyCell(
-					nextInsertValue(),
-					fillRandomEmptyCell(nextInsertValue(), Array(4).fill(zeros(4)))
-				);
-			const anyChange = (a, b) =>
-				a.some((r, y) => r.some((c, x) => c !== b[y][x]));
-			const newGame = () => ({
+			nextSeed = () => (Math.random() < 0.2 ? 4 : 2);
+			initBoard = () =>
+				addSeed(nextSeed(), addSeed(nextSeed(), Array(4).fill(zeros(4))));
+			anyChange = (a, b) => a.some((r, y) => r.some((c, x) => c !== b[y][x]));
+			newGame = () => ({
 				score: 0,
-				board: initializeBoard()
+				board: initBoard()
 			});
-			const makeMove = (rot, rotback) => m => {
-				const moved = rotback(stackLeft(rot(m)));
-				return anyChange(moved, m)
-					? fillRandomEmptyCell(nextInsertValue(), moved)
-					: moved;
+			makeMove = (rot, rotback) => m => {
+				const moved = rotback(stackRow(rot(m)));
+				return anyChange(moved, m) ? addSeed(nextSeed(), moved) : moved;
 			};
-			let theGame = newGame();
+			theGame = newGame();
 			render(theGame);
 			document.addEventListener("keyup", e => {
-				if (e.key === "r" || e.key === "R") {
-					theGame = newGame();
-					render(theGame);
-				}
-				const advance = move =>
-					move === "Left"
+				advance = mv =>
+					mv === "Left"
 						? makeMove(
 								m => m,
 								m => m
 						  )
-						: move === "Up"
+						: mv === "Up"
 						? makeMove(rot90, rot270)
-						: move === "Right"
+						: mv === "Right"
 						? makeMove(rot180, rot180)
 						: makeMove(rot270, rot90);
-				const move = e.key.startsWith("Arrow")
-					? e.key.slice("Arrow".length)
-					: null;
-				if (move) {
-					theGame = { ...theGame, board: advance(move)(theGame.board) };
+				if (e.key.startsWith("Arrow")) {
+					theGame = {
+						...theGame,
+						board: advance(e.key.slice("Arrow".length))(theGame.board)
+					};
 					render(theGame);
 				}
 			});
