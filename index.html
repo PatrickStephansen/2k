@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+		<style>
+			pre {
+				line-height: 4em;
+			}
+		</style>
+		<title>2K</title>
+	</head>
+	<body>
+		<h1>2k</h1>
+		<p>2048 in 2048 bytes or less</p>
+		<pre id="o"></pre>
+		<script>
+			const compose = fns => x => fns.reverse().reduce((o, f) => f(o), x);
+			const toText = m => m.map(r => r.join("\t")).join("\n");
+			const getCol = (c, m) => m.map(r => r[c]);
+			const rot90 = m => m.map((_, i) => getCol(m.length - i - 1, m));
+			const rot180 = m => compose([rot90, rot90])(m);
+			const rot270 = m => compose([rot180, rot90])(m);
+			const stackRowLeft = r => {
+				const f = r.filter(c => c);
+				return f.length === 0
+					? [0]
+					: f.length === 1
+					? f
+					: f[0] == f[1]
+					? [f[0] * 2, ...stackRowLeft(f.slice(2))].flat()
+					: [f[0], ...stackRowLeft(f.slice(1))].flat();
+			};
+			const zeros = n => Array(n).fill(0);
+			const ensureLength = (l, a) =>
+				a.length >= l ? a.slice(0, l) : [...a, ...zeros(l - a.length)];
+			const stackLeft = m =>
+				m.map(r => ensureLength(m.length, stackRowLeft(r)));
+			const setCell = (value, x, y, m) => [
+				...m.slice(0, y),
+				m[y].map((c, i) => (i === x ? value : c)),
+				...m.slice(y + 1)
+			];
+			const withCoords = m =>
+				m.flatMap((r, y) => r.map((c, x) => ({ x, y, value: c })));
+			const fillRandomEmptyCell = (fillValue, m) => {
+				const candidates = withCoords(m).filter(c => c.value === 0);
+				if (candidates.length === 0) return m;
+				const choiceIndex = Math.floor(Math.random() * candidates.length);
+				const choice = candidates[choiceIndex];
+				return setCell(fillValue, choice.x, choice.y, m);
+			};
+			const render = g => {
+				o.innerText = toText(g.board);
+			};
+			const nextInsertValue = () => (Math.random() < 0.25 ? 4 : 2);
+			const initializeBoard = () =>
+				fillRandomEmptyCell(
+					nextInsertValue(),
+					fillRandomEmptyCell(nextInsertValue(), Array(4).fill(zeros(4)))
+				);
+			const anyChange = (a, b) =>
+				a.some((r, y) => r.some((c, x) => c !== b[y][x]));
+			const newGame = () => ({
+				score: 0,
+				board: initializeBoard()
+			});
+			const makeMove = (rot, rotback) => m => {
+				const moved = rotback(stackLeft(rot(m)));
+				return anyChange(moved, m)
+					? fillRandomEmptyCell(nextInsertValue(), moved)
+					: moved;
+			};
+			let theGame = newGame();
+			render(theGame);
+			document.addEventListener("keyup", e => {
+				if (e.key === "r" || e.key === "R") {
+					theGame = newGame();
+					render(theGame);
+				}
+				const advance = move =>
+					move === "Left"
+						? makeMove(
+								m => m,
+								m => m
+						  )
+						: move === "Up"
+						? makeMove(rot90, rot270)
+						: move === "Right"
+						? makeMove(rot180, rot180)
+						: makeMove(rot270, rot90);
+				const move = e.key.startsWith("Arrow")
+					? e.key.slice("Arrow".length)
+					: null;
+				if (move) {
+					theGame = { ...theGame, board: advance(move)(theGame.board) };
+					render(theGame);
+				}
+			});
+		</script>
+	</body>
+</html>
