@@ -39,9 +39,9 @@
 			r180 = m => r90(r90(m));
 			r270 = m => r180(r90(m));
 			(render = m => {
-				o.innerText = m.map(r => r.join("\t")).join("\n");
+				o.innerText = m.map(r => r.map(c => c || "-").join("\t")).join("\n");
 				w.innerText = (m.flat().some(c => c >= 2048) && "Winner!") || "";
-			})((brd = seed(seed(z(4).map(() => z(4))))));
+			})((board = seed(seed(z(4).map(() => z(4))))));
 			upd = d =>
 				d == 0
 					? mv(id, id)
@@ -54,7 +54,7 @@
 					: id;
 			l = document.addEventListener;
 			l("keyup", e => {
-				e.key.startsWith("Arrow") && render((brd = upd(e.keyCode - 37)(brd)));
+				render((board = upd(e.keyCode - 37)(board)));
 			});
 			l("touchstart", e => (tch = e.changedTouches[0]));
 			l(
@@ -65,7 +65,7 @@
 					x = tch.pageX - t.pageX,
 					y = tch.pageY - t.pageY,
 					d = x > 50 ? 0 : x < -50 ? 2 : y > 50 ? 1 : y < -50 ? 3 : 9
-				) => render((brd = upd(d)(brd))) && (tch = null)
+				) => render((board = upd(d)(board))) && (tch = null)
 			);
 		</script>
 	</body>
