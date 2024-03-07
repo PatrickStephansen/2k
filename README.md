@@ -1,6 +1,6 @@
 # 2k
 
-2048 in 2048 bytes. I'm only counting the index.html, not the readme or .editorconfig since they are not actually served.
+2048, the game, in 2048 bytes of source code.
 
 For proof, run `curl https://patrickstephansen.github.io/2k/ | wc -c`.
 
